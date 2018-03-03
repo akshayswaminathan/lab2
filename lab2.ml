@@ -44,9 +44,9 @@ To think about before you start coding:
 Now implement the two functions curry and uncurry.
 ......................................................................*)
 
-let curry = fun _ -> failwith "curry not implemented" ;;
+let curry f x y = f (x, y) ;;
      
-let uncurry = fun _ -> failwith "uncurry not implemented" ;;
+let uncurry f (x, y) = f x y ;;
 
 (*......................................................................
 Exercise 2: OCaml's built in binary operators, like ( + ) and ( * ) are
@@ -61,11 +61,9 @@ Using your uncurry function, define uncurried plus and times
 functions.
 ......................................................................*)
 
-let plus =
-  fun _ -> failwith "plus not implemented"
+let plus (x, y) = uncurry (+) (x, y)
      
-let times =
-  fun _ -> failwith "times not implemented" ;;
+let times (x, y) = uncurry ( * ) (x, y) ;;
   
 (*......................................................................
 Exercise 3: Recall the prods function from Lab 1:
@@ -79,8 +77,8 @@ Now reimplement prods using map and your uncurried times function. Why
 do you need the uncurried times function?
 ......................................................................*)
 
-let prods =
-  fun _ -> failwith "prods not implemented" ;; 
+let rec prods (lst : (int * int) list) : int list =
+  List.map times lst ;;
 
 (*======================================================================
 Part 2: Option types
@@ -224,10 +222,7 @@ Do so below in a new definition of zip.
 ......................................................................*)
 
 let rec zip (x : 'a list) (y : 'b list) : ('a * 'b) list option =
-  if (List.length x) != (List.length y) then None else
-  match x, y with
-  | [], [] -> Some []
-  | xhd :: xtl, yhd :: ytl -> (xhd, yhd) :: (zip_exn xtl ytl) ;;
+  if (List.length x) != (List.length y) then None else Some (zip_exn x y) ;;
 
 (*====================================================================
 Part 4: Factoring out None-handling
@@ -260,7 +255,9 @@ adjusted for the result type. Implement the maybe function.
 ......................................................................*)
   
 let maybe (f : 'a -> 'b) (x : 'a option) : 'b option =
-  failwith "maybe not implemented" ;; 
+  match x with
+  | None -> None
+  | Some v -> Some (f v) ;;
 
 (*......................................................................
 Exercise 13: Now reimplement dotprod to use the maybe function. (The
@@ -274,7 +271,7 @@ let sum : int list -> int =
   List.fold_left (+) 0 ;;
 
 let dotprod (a : int list) (b : int list) : int option =
-  failwith "dot_prod not implemented" ;; 
+  maybe (sum (maybe prods (zip a b))) ;;
 
 (*......................................................................
 Exercise 14: Reimplement zip along the same lines, in zip_2 below. 
@@ -338,7 +335,7 @@ For example:
 let transcript (enrollments : enrollment list)
                (student : int)
              : enrollment list =
-  failwith "transcript not implemented" ;;
+  List.filter (fun x -> x.id = student) enrollments ;;
   
 (*......................................................................
 Exercise 17: Define a function called ids that takes an enrollment
@@ -352,7 +349,7 @@ For example:
 ......................................................................*)
 
 let ids (enrollments: enrollment list) : int list =
-  failwith "ids not implemented" ;;
+  List.sort_uniq compare (List.map (fun x -> x.id) enrollments) ;;
   
 (*......................................................................
 Exercise 18: Define a function called verify that determines whether all
@@ -365,4 +362,7 @@ For example:
 ......................................................................*)
 
 let verify (enrollments : enrollment list) : bool =
-  failwith "verify not implemented" ;;
+  let namecheck l = List.length (List.sort_uniq compare 
+                    (List.map (fun x -> x.id) enrollments)) = 1 in 
+  let transcript' x = transcript enrollments x in
+  List.for_all namecheck (List.map transcript' (ids college)) ;;
